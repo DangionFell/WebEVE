@@ -66,11 +66,11 @@ WTF_CSRF_ENABLED = True
 
 @app.route('/', methods=['POST','GET'])
 def main():
-    with open("typeIDs.yaml", "r", encoding="utf-8") as file:
-        typeIDs = yaml.safe_load(file)
-    with open("blueprints.yaml", "r", encoding="utf-8") as file:
-        blueprints = yaml.safe_load(file)
     if request.method == 'POST':
+        with open("typeIDs.yaml", "r", encoding="utf-8") as file:
+            typeIDs = yaml.safe_load(file)
+        with open("blueprints.yaml", "r", encoding="utf-8") as file:
+            blueprints = yaml.safe_load(file)
         list1 = []
         item = getBlueprint(getID(request.form.get('blueprintName', default=None, type=None), typeIDs), typeIDs)
         count = int(request.form.get('count', default=None, type=None))
