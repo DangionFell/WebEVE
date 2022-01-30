@@ -2,13 +2,18 @@ from flask import Flask, render_template, request
 import yaml
 import math
 
-def getName(id, typeIDs):
+with open("typeIDs.yaml", "r", encoding="utf-8") as file:
+    typeIDs = yaml.safe_load(file)
+with open("blueprints.yaml", "r", encoding="utf-8") as file:
+    blueprints = yaml.safe_load(file)
+
+def getName(id):
   try:
     return(str(typeIDs[id]["name"]["en"]))
   except KeyError:
     return("Name not found")
 
-def getStack(id, blueprints):
+def getStack(id):
   try:
     return blueprints[id]["activities"]["manufacturing"]["products"][0]["quantity"]
   except:
@@ -17,13 +22,13 @@ def getStack(id, blueprints):
     except:
       return ("Stack size not found")
 
-def getID(name, typeIDs):
+def getID(name):
   for m in typeIDs:
-    if getName(m, typeIDs) == name:
+    if getName(m) == name:
       return(int(m))
   return ("ID not found")
 
-def getMaterials(id, blueprints):
+def getMaterials(id):
   try:
     return blueprints[id]["activities"]["manufacturing"]["materials"]
   except:
@@ -32,10 +37,10 @@ def getMaterials(id, blueprints):
     except:
       return ("Material not found")
 
-def getBlueprint (id, typeIDs):
+def getBlueprint (id):
   try:
-    s = getID(getName(id, typeIDs) + " Blueprint", typeIDs)
-    s1 = getID(getName(id, typeIDs) + " Reaction Formula", typeIDs)
+    s = getID(getName(id) + " Blueprint")
+    s1 = getID(getName(id) + " Reaction Formula")
     if s == s1:
       return("Blueprint not found")
     else:
@@ -67,16 +72,12 @@ WTF_CSRF_ENABLED = True
 @app.route('/', methods=['POST','GET'])
 def main():
     if request.method == 'POST':
-        with open("typeIDs.yaml", "r", encoding="utf-8") as file:
-            typeIDs = yaml.safe_load(file)
-        with open("blueprints.yaml", "r", encoding="utf-8") as file:
-            blueprints = yaml.safe_load(file)
         list1 = []
-        item = getBlueprint(getID(request.form.get('blueprintName', default=None, type=None), typeIDs), typeIDs)
+        item = getBlueprint(getID(request.form.get('blueprintName', default=None, type=None)))
         count = int(request.form.get('count', default=None, type=None))
 
         if item != "Blueprint not found":
-            item = getMaterials(item, blueprints)
+            item = getMaterials(item)
 
             k = 0
             for i in item:
@@ -87,14 +88,14 @@ def main():
 
             k = 0
             while k != len(list1):
-                if getBlueprint(list1[k]["typeID"], typeIDs) != "Blueprint not found":
-                    item = getMaterials(getBlueprint(list1[k]["typeID"], typeIDs), blueprints)
+                if getBlueprint(list1[k]["typeID"]) != "Blueprint not found":
+                    item = getMaterials(getBlueprint(list1[k]["typeID"]))
                     leng = len(list1)
                     c = 0
                     for i in item:
                         list1.append({'quantity': 0, 'typeID': 0})
                         list1[c + leng]["quantity"] = math.ceil(
-                            list1[k]["quantity"] / getStack(getBlueprint(list1[k]["typeID"], typeIDs), blueprints)) * i["quantity"]
+                            list1[k]["quantity"] / getStack(getBlueprint(list1[k]["typeID"]))) * i["quantity"]
                         list1[c + leng]["typeID"] = i["typeID"]
                         c += 1
                     list1.pop(k)
@@ -107,7 +108,7 @@ def main():
             k = 0
             for i in list1:
                 list_out.append({'name': str, 'quantity': 0})
-                list_out[k]['name'] = getName(i['typeID'], typeIDs)
+                list_out[k]['name'] = getName(i['typeID'])
                 list_out[k]['quantity'] = i['quantity']
                 k += 1
             return render_template('index.html', blueprintList= list_out)
